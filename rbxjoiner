@@ -1,0 +1,103 @@
+#!/bin/bash
+
+# Xóa màn hình trước khi bắt đầu
+clear
+
+# URL API để tham gia rain
+RAIN_URL="https://rblxwild.com/api/jackpot/subscribe"
+
+# Danh sách proxy
+PROXIES=(
+    "103.82.38.247:13197:bestproxy.vn13197:eFsX8"
+    "103.82.38.247:12871:bestproxy.vn12871:B9mbq"
+    "103.82.38.247:13738:bestproxy.vn13738:RP83F"
+    "103.82.38.247:13048:bestproxy.vn13048:mzRK5"
+    "103.82.38.247:13728:bestproxy.vn13728:jdVYZ"
+    "103.82.38.247:12643:bestproxy.vn12643:wuicd"
+    "103.82.38.247:12664:bestproxy.vn12664:6aGK6"
+    "103.82.38.247:13409:bestproxy.vn13409:CkYJS"
+    "103.82.38.247:12330:bestproxy.vn12330:994R5"
+    "103.82.38.247:13929:bestproxy.vn13929:Rbkie"
+)
+
+# Danh sách connect.sid (theo thứ tự yêu cầu)
+CONNECT_SIDS=(
+    "s%3ARWlRBLhBDNmZ6QXyx3ijN6laN-XvUCuY.MeFhf%2BlH%2Fkl%2BIgV%2F4WZfU4Flpp9tPCKPaDAtlr%2F2Ch0"
+    "s%3A6r8RWgowdGjk7OITVSHiaMJYJszqIr75.xUnCFg8vMQpoYiESsljGzhAvLmz%2F7asU2NF742Gt4O4"
+    "s%3AmtpdnyrT7Dp_Lw480SFkichbz0tp2djm.SNeGkMZgf6iycy49y2u6gAl0yKfAnN7Nn1X9c7V3%2FTY"
+    "s%3A8SLFI55UVBnkcknMGUzaIiuwVMtKJl7_.tqQyZwcvCkyHC0GPXL%2FddN2RmWYMr5Ezl8u5U%2FmKXKE"
+    "s%3Ae17eWhFqRdpdpHGLyFR2hE42q0soukwb.6ovSAcf%2BGeMo1gf%2BlgyME03GLp121bdd%2BxwkV2yUC1s"
+    "s%3AcLBkbg_Mcgr8ZO0kujn2u2d3pSQUFMvT.cggejofDK2xnmLjeKSdFQ%2BS9ZqmaJLl5CkQ8L%2FGJZHs"
+    "s%3Ad8MyqKz-c3DlQjGwZ52SxzFDPlAKHC3n.5ma9Gx1URBKKs4hywazbnkyG5G02mNisEVyr8hNKK88"
+    "s%3A_KHxgpny5gG_O7HezBt8aVieiENmtiEg.F9onpY3RR0%2BCXxx0Blz71bRWkT%2FAA221pw0OlXNuNJM"
+    "s%3Asq3GU4-1fTAqn2hBCfAIwUCH-zvKHrTZ.xETyXIbXXgC%2F8Nke876k8bjFEo8K7EuzUeLgRBUQqrc"
+    "s%3AUK_CFd75Febz21owxD7v4jbl93nYLB9Q.AOxmg85kMi0O%2F8kUrtDiKWI4wgkKkujouudhq%2FaY1KI"
+)
+
+# Kiểm tra nếu số lượng proxy và connect.sid không khớp
+if [[ ${#PROXIES[@]} -ne ${#CONNECT_SIDS[@]} ]]; then
+    echo "❌ Số lượng proxy và connect.sid không khớp!"
+    exit 1
+fi
+
+# Khởi tạo bộ đếm
+script_count=0
+
+# Hàm kiểm tra thời gian và chạy script khi đạt đến 59 phút 1 giây
+check_time_and_run() {
+    while true; do
+        # Lấy thời gian hiện tại
+        current_time=$(date +"%M:%S")
+
+        # Di chuyển con trỏ về đầu màn hình mà không xóa kết quả cũ
+        echo -e "\033[H"
+
+        # In ra thời gian hiện tại theo yêu cầu
+        echo "Nya Nya giờ là: $current_time"
+
+        # Kiểm tra nếu thời gian là 59 phút 1 giây
+        if [[ "$current_time" == "59:01" ]]; then
+            # Tăng bộ đếm script mỗi khi script được chạy
+            ((script_count++))
+
+            # Lấy thời gian thực hiện script
+            current_run_time=$(date +"%H:%M:%S")
+            echo "Neco đã nya lần $script_count lúc: $current_run_time"
+
+            # Lặp qua từng proxy và connect.sid
+            for i in "${!PROXIES[@]}"; do
+                PROXY_INFO=(${PROXIES[$i]//:/ })
+                PROXY="${PROXY_INFO[0]}:${PROXY_INFO[1]}"
+                PROXY_USER="${PROXY_INFO[2]}"
+                PROXY_PASS="${PROXY_INFO[3]}"
+                SID="${CONNECT_SIDS[$i]}"
+
+                # Gửi yêu cầu tham gia rain
+                RESPONSE=$(curl -X POST "$RAIN_URL" \
+                    -H "Cookie: connect.sid=$SID" \
+                    -H "Content-Type: application/json" \
+                    -H "Origin: https://rblxwild.com" \
+                    -H "Referer: https://rblxwild.com/?modal=tip-rain" \
+                    --proxy "http://$PROXY" \
+                    --proxy-user "$PROXY_USER:$PROXY_PASS" \
+                    --silent --write-out "HTTP_CODE:%{http_code}" --output /dev/null)
+
+                HTTP_CODE=$(echo "$RESPONSE" | grep -o "HTTP_CODE:[0-9]*" | cut -d':' -f2)
+
+                if [[ "$HTTP_CODE" == "200" ]]; then
+                    # In ra kết quả thành công lên màn hình
+                    echo "✅ Proxy $((i+1)) Nya Nya tham gia thành công rồi ~"
+                else
+                    # In ra kết quả thất bại lên màn hình
+                    echo "❌ Proxy $((i+1)) Nya Nya tham gia thất bại rồi ~"
+                fi
+            done
+        fi
+
+        # Dừng 1 giây để không làm quá tải CPU
+        sleep 1
+    done
+}
+
+# Gọi hàm kiểm tra và chạy
+check_time_and_run
