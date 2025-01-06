@@ -1,0 +1,72 @@
+import os
+import time
+import subprocess
+
+# Define the fixed server URL
+URL_SERVER_VIP = "https://www.roblox.com/share?code=4fc8a155c9a43d40a416af40df947264&type=Server"  # URL server VIP đã cho
+
+def clear_screen():
+    os.system('cls' if os.name == 'nt' else 'clear')
+
+def update_status_table(package_statuses):
+    # Function to print the current status of all packages (could be customized)
+    for package_name, status in package_statuses.items():
+        print(f"{package_name}: {status['Status']}")
+
+def open_roblox_package(package_type, num_instances, script_id):
+    package_statuses = {}
+
+    if package_type == "global":
+        base_package = "com.roblox.client"
+    elif package_type == "vng":
+        base_package = "com.roblox.client.vnggame"
+    else:
+        print("Invalid package type.")
+        return
+
+    # Start from package 'b', hence we start with 98 (ASCII value of 'b')
+    for i in range(98, 98 + num_instances):  # Start from 'b' (ASCII value 98)
+        package_name = f"{base_package}{chr(i)}"
+        unique_package_name = f"{package_name}_script{script_id}"  # Add script_id to make the package name unique
+        print(f"Opening {unique_package_name}...")
+
+        # Update the status to indicate Roblox is opening
+        package_statuses[unique_package_name] = {"Status": f"Opening Roblox for {unique_package_name}..."}
+        update_status_table(package_statuses)
+
+        # Open Roblox (Initial Splash)
+        subprocess.run(['am', 'start', '-n', f'{package_name}/com.roblox.client.startup.ActivitySplash', '-d', URL_SERVER_VIP], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+        time.sleep(15 if num_instances >= 6 else 8)  # Adjust wait time based on the number of packages
+
+        # Proceed to launch
+        package_statuses[unique_package_name]["Status"] = f"Joining Roblox for {unique_package_name}..."
+        update_status_table(package_statuses)
+
+        subprocess.run(['am', 'start', '-n', f'{package_name}/com.roblox.client.ActivityProtocolLaunch', '-d', URL_SERVER_VIP], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+        
+        # Wait a moment to ensure Roblox has launched
+        time.sleep(20)
+
+def main():
+    clear_screen()  # Clear screen first
+    print("Master muốn sử dụng bản nào?")
+    print("1. Global")
+    print("2. Vng")
+    
+    package_choice = input("Nhập lựa chọn (1 hoặc 2): ").strip()
+    
+    if package_choice == "1":
+        package_type = "global"
+    elif package_choice == "2":
+        package_type = "vng"
+    else:
+        print("Lựa chọn không hợp lệ!")
+        return
+    
+    num_instances = int(input("Nhập số lượng phiên bản bạn muốn mở: ").strip())
+    script_id = input("Nhập ID script để phân biệt phiên bản (ví dụ: 1, 2, 3...): ").strip()
+
+    open_roblox_package(package_type, num_instances, script_id)
+
+if __name__ == "__main__":
+    main()
